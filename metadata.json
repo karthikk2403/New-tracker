@@ -1,6 +1,6 @@
 {
-  "name": "TeamTask - Collaborative Project Manager",
-  "description": "A full-stack team task management application with role-based access control, real-time updates, and project tracking dashboards.",
+  "name": "Nexus Task Management",
+  "description": "A high-performance, aesthetically-driven project management application featuring real-time collaboration, strategic dashboards, and tactical task management.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
