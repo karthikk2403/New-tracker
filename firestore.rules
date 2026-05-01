@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn(); }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function getProject(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data;
+    }
+    
+    function isProjectMember(projectId) {
+      return isSignedIn() && request.auth.uid in getProject(projectId).members;
+    }
+    
+    function isProjectAdmin(projectId) {
+      return isSignedIn() && getProject(projectId).members[request.auth.uid] == 'ADMIN';
+    }
+
+    // --- User Profiles ---
+    function isValidUser(data) {
+      return data.uid == request.auth.uid 
+        && data.email is string
+        && data.displayName is string && data.displayName.size() <= 100
+        && data.keys().hasAll(['uid', 'email', 'displayName', 'role'])
+        && data.keys().size() <= 6;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+    }
+
+    // --- Projects ---
+    function isValidProject(data) {
+      return data.name is string && data.name.size() <= 100
+        && data.ownerId == request.auth.uid
+        && data.members[request.auth.uid] == 'ADMIN'
+        && data.keys().hasAll(['name', 'ownerId', 'members', 'createdAt'])
+        && data.keys().size() <= 6;
+    }
+
+    match /projects/{projectId} {
+      // Secure List: Check resource.data members map (only works if filtered by map key in query)
+      // or check ownerId. Since queries usually filter by member, this works for list.
+      allow list: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || 
+        request.auth.uid in resource.data.members
+      );
+      allow get: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid || 
+        request.auth.uid in resource.data.members
+      );
+      
+      allow create: if isVerified() && isValidId(projectId) && isValidProject(incoming());
+        
+      allow update: if isVerified() 
+        && (isProjectAdmin(projectId) || existing().ownerId == request.auth.uid)
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt;
+        
+      allow delete: if isVerified() && existing().ownerId == request.auth.uid;
+    }
+
+    // --- Tasks ---
+    function isValidTask(data) {
+      return data.projectId is string 
+        && data.title is string && data.title.size() <= 200
+        && data.status in ['todo', 'in-progress', 'completed', 'archived']
+        && data.priority in ['low', 'medium', 'high', 'urgent']
+        && data.createdBy == request.auth.uid
+        && data.viewerIds is list // Security Pillar 5: Array guard
+        && data.viewerIds.size() <= 100 // Scale limit
+        && data.keys().hasAll(['projectId', 'title', 'status', 'priority', 'createdBy', 'viewerIds', 'createdAt', 'updatedAt']);
+    }
+
+    match /tasks/{taskId} {
+      // Security Pillar 8: No get() in list. Use denormalized viewerIds.
+      allow list: if isSignedIn() && (
+        request.auth.uid in resource.data.viewerIds ||
+        resource.data.assignedTo == request.auth.uid ||
+        resource.data.createdBy == request.auth.uid
+      );
+      
+      // Master Gate for get: Use get() to verify current project membership
+      allow get: if isSignedIn() && isProjectMember(resource.data.projectId);
+
+      allow create: if isVerified()
+        && isValidId(taskId)
+        && isProjectMember(incoming().projectId)
+        && isValidTask(incoming())
+        && incoming().createdAt == request.time;
+
+      allow update: if isVerified()
+        && isProjectMember(existing().projectId)
+        && (
+          // Action: Admin Full Update
+          (isProjectAdmin(existing().projectId) && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'status', 'priority', 'assignedTo', 'updatedAt', 'viewerIds'])) ||
+          // Action: Status/Assignment Update
+          ((request.auth.uid == existing().assignedTo || request.auth.uid == existing().createdBy) && 
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'assignedTo', 'updatedAt']))
+        )
+        && incoming().projectId == existing().projectId
+        && incoming().createdBy == existing().createdBy
+        && incoming().updatedAt == request.time;
+        
+      allow delete: if isVerified() 
+        && (isProjectAdmin(existing().projectId) || existing().createdBy == request.auth.uid);
+    }
+
+    // --- Comments ---
+    match /comments/{commentId} {
+      allow list, get: if isSignedIn() && isProjectMember(resource.data.projectId);
+      allow create: if isVerified() 
+        && isProjectMember(request.resource.data.projectId)
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isVerified() && (resource.data.userId == request.auth.uid || isProjectAdmin(resource.data.projectId));
+    }
+
+    // --- Activity ---
+    match /activity/{activityId} {
+      allow list, get: if isSignedIn() && isProjectMember(resource.data.projectId);
+      allow create: if isVerified() && isProjectMember(request.resource.data.projectId);
+      allow update, delete: if false; // Logs are immutable
+    }
+  }
+}
