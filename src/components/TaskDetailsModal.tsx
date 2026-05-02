@@ -169,7 +169,7 @@ export function TaskDetailsModal({ task, onClose, memberProfiles }: TaskDetailsM
       >
         <div className="p-10 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center space-x-6">
-             <div className="w-14 h-14 rounded-2xl bg-black flex items-center justify-center shadow-lg rotate-3 overflow-hidden">
+             <div className="w-14 h-14 rounded-2xl bg-black flex items-center justify-center shadow-lg rotate-3 overflow-hidden group-hover:rotate-6 transition-transform">
                 <Tag className="text-white w-7 h-7" />
              </div>
              <div>
@@ -189,7 +189,7 @@ export function TaskDetailsModal({ task, onClose, memberProfiles }: TaskDetailsM
           </div>
           <button 
             onClick={onClose}
-            className="p-4 hover:bg-gray-100 rounded-2xl transition-colors"
+            className="p-4 hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all active:scale-90"
           >
             <X className="w-6 h-6" />
           </button>
@@ -240,7 +240,9 @@ export function TaskDetailsModal({ task, onClose, memberProfiles }: TaskDetailsM
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <motion.button 
                       whileHover={{ scale: 1.02 }}
-                      className="flex items-center space-x-4 p-6 border-2 border-dashed border-gray-100 rounded-[2rem] hover:border-black hover:bg-gray-50 transition-all text-gray-400 group"
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => alert("Secure file uplink is currently being authenticated. Protocol restricted.")}
+                      className="flex items-center space-x-4 p-6 border-2 border-dashed border-gray-100 rounded-[2rem] hover:border-black hover:bg-gray-50 transition-all text-gray-400 group h-24"
                     >
                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all">
                           <Paperclip className="w-5 h-5" />

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { CheckSquare } from 'lucide-react';
+import { Navigate, Link } from 'react-router-dom';
+import { Cpu, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { signInWithPopup, googleProvider, auth } from '../lib/firebase';
 import { motion } from 'motion/react';
@@ -21,83 +21,69 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 font-sans">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center"
+    <div className="min-h-screen bg-white flex items-center justify-center p-6 font-sans relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-gray-50 rounded-full blur-3xl opacity-50" />
+         <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-blue-50/30 rounded-full blur-3xl opacity-50" />
+      </div>
+
+      <Link 
+        to="/landing" 
+        className="fixed top-8 left-8 flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black transition-colors"
       >
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-black rounded-2xl mb-6">
-          <CheckSquare className="text-white w-8 h-8" />
+        <ArrowLeft className="w-4 h-4" />
+        <span>Return to Surface</span>
+      </Link>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        className="w-full max-w-[480px] bg-white rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.1)] border border-gray-100 p-12 md:p-16 text-center relative overflow-hidden"
+      >
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-black rounded-3xl mb-10 shadow-2xl rotate-6">
+          <Cpu className="text-white w-10 h-10" />
         </div>
         
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
-          Welcome to TeamTask
+        <h1 className="text-4xl font-display font-black tracking-tighter text-gray-900 mb-4 leading-tight">
+          OPERATIVE <br /> AUTHENTICATION.
         </h1>
-        <p className="text-gray-500 mb-10">
-          Sign in to manage your projects, collaborate with your team, and track your progress.
+        <p className="text-gray-400 font-medium mb-12 text-sm leading-relaxed">
+          Initialize your tactical connection. Access the global mission control network and synchronize with your team.
         </p>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg text-sm font-medium">
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-8 p-6 bg-red-50 text-red-600 rounded-3xl text-[10px] font-black uppercase tracking-widest border border-red-100"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
-        <button
-          onClick={handleLogin}
-          className="w-full flex items-center justify-center space-x-3 bg-white border border-gray-300 py-3 px-4 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm active:scale-[0.98]"
-        >
-          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-          <span>Continue with Google</span>
-        </button>
-
-        <p className="mt-8 text-xs text-gray-400">
-          By signing in, you agree to our Terms of Service and Privacy Policy.
-        </p>
-      </motion.div>
-      
-      <div className="mt-12 flex space-x-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
-        <FolderKanbanIcon />
-        <StatusIcon />
-        <TeamIcon />
-      </div>
-    </div>
-  );
-}
-
-function FolderKanbanIcon() {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-2">
-        <div className="w-5 h-5 bg-blue-500 rounded-sm" />
-      </div>
-      <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
-    </div>
-  );
-}
-
-function StatusIcon() {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-2">
-        <div className="w-5 h-5 bg-green-500 rounded-full" />
-      </div>
-      <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
-    </div>
-  );
-}
-
-function TeamIcon() {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-2">
-        <div className="flex -space-x-1">
-          <div className="w-4 h-4 rounded-full bg-orange-500 border border-orange-100" />
-          <div className="w-4 h-4 rounded-full bg-orange-400 border border-orange-100" />
+        <div className="space-y-4">
+          <motion.button
+            whileHover={{ y: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleLogin}
+            className="w-full flex items-center justify-center space-x-4 bg-black text-white py-6 px-4 rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_20px_40px_rgba(0,0,0,0.2)] hover:shadow-[0_25px_50px_rgba(0,0,0,0.25)] transition-all"
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5 invert" />
+            <span>Deploy via Google</span>
+          </motion.button>
         </div>
-      </div>
-      <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+
+        <div className="mt-12 pt-12 border-t border-gray-50 flex flex-col items-center gap-4">
+           <div className="flex items-center space-x-2 text-[10px] font-black uppercase tracking-widest text-gray-300">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Secure Authentication Protocol v2.4</span>
+           </div>
+           <p className="text-[10px] text-gray-400 font-medium leading-relaxed max-w-[280px]">
+             By initializing, you acknowledge the terms of tactical engagement and mission privacy protocols.
+           </p>
+        </div>
+      </motion.div>
     </div>
   );
 }

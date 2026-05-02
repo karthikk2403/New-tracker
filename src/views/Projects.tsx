@@ -57,8 +57,9 @@ export function Projects() {
         name: newProject.name,
         description: newProject.description,
         ownerId: user.uid,
+        teamLeaderId: user.uid, // Default to creator
         members: {
-          [user.uid]: 'ADMIN'
+          [user.uid]: 'OWNER'
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -114,6 +115,7 @@ export function Projects() {
           projects.map((project, index) => {
             const progress = getProjectProgress(project.id);
             const projectTasks = tasks.filter(t => t.projectId === project.id);
+            const userRole = user ? project.members[user.uid] : null;
             
             return (
               <motion.div
@@ -138,14 +140,25 @@ export function Projects() {
                     <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all transform group-hover:rotate-6">
                       <FolderKanban className="w-6 h-6" />
                     </div>
-                    <div className="flex items-center bg-gray-50 px-3 py-1 rounded-full group-hover:bg-black group-hover:text-white transition-all">
-                       <span className="text-[10px] font-black uppercase tracking-widest mr-2">{progress}%</span>
-                       <div className="w-12 h-1 bg-gray-200 rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${progress}%` }}
-                            className="h-full bg-current"
-                          />
+                    <div className="flex items-center space-x-3">
+                       {userRole && (
+                         <div className={cn(
+                           "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
+                           userRole === 'OWNER' ? "bg-black text-white" : 
+                           userRole === 'ADMIN' ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"
+                         )}>
+                           {userRole}
+                         </div>
+                       )}
+                       <div className="flex items-center bg-gray-50 px-3 py-1 rounded-full group-hover:bg-black group-hover:text-white transition-all text-gray-400">
+                          <span className="text-[10px] font-black uppercase tracking-widest mr-2">{progress}%</span>
+                          <div className="w-12 h-1 bg-gray-200 rounded-full overflow-hidden">
+                             <motion.div 
+                               initial={{ width: 0 }}
+                               animate={{ width: `${progress}%` }}
+                               className="h-full bg-current"
+                             />
+                          </div>
                        </div>
                     </div>
                   </div>
@@ -203,21 +216,24 @@ export function Projects() {
           })
         ) : (
           <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="col-span-full py-20 text-center bg-gray-50/50 border-2 border-dashed border-gray-100 rounded-[3rem]"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="col-span-full py-32 text-center bg-gray-50/50 border-2 border-dashed border-gray-100 rounded-[4rem] relative overflow-hidden"
           >
-            <div className="w-20 h-20 bg-white rounded-3xl shadow-lg flex items-center justify-center mx-auto mb-8">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+            <div className="w-24 h-24 bg-white rounded-[2rem] shadow-2xl flex items-center justify-center mx-auto mb-10 rotate-6 border border-gray-100">
               <FolderKanban className="w-10 h-10 text-gray-900" />
             </div>
-            <h3 className="text-2xl font-black mb-2 tracking-tight">No projects yet</h3>
-            <p className="text-gray-400 mb-10 max-w-xs mx-auto font-medium">Create your first initiative and invite your team to start collaborating.</p>
-            <button
+            <h3 className="text-4xl font-display font-black mb-4 tracking-tighter">SURFACE CLEAR.</h3>
+            <p className="text-gray-400 mb-12 max-w-xs mx-auto font-medium leading-relaxed uppercase text-[10px] tracking-widest">No active mission protocols detected in this sector.</p>
+            <motion.button
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setShowCreateModal(true)}
-              className="bg-black text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:shadow-xl transition-all"
+              className="bg-black text-white px-12 py-5 rounded-[2rem] font-black uppercase tracking-[0.3em] hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] transition-all text-xs"
             >
-              Start Project
-            </button>
+              Initialize Deployment
+            </motion.button>
           </motion.div>
         )}
       </div>

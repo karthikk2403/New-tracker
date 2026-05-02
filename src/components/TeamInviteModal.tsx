@@ -15,6 +15,7 @@ import { Project } from '../types';
 import { X, Search, UserPlus, Mail, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNotification } from './Notification';
+import { cn } from '../lib/utils';
 
 interface TeamInviteModalProps {
   project: Project;

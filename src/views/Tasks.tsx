@@ -16,6 +16,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
+import { cn } from '../lib/utils';
 
 export function Tasks() {
   const { user } = useAuth();

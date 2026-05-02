@@ -125,7 +125,9 @@ export function Dashboard() {
         
         {/* Large Hero Metric */}
         <motion.div 
-          whileHover={{ y: -5 }}
+          whileHover={{ y: -8, rotateX: 1, rotateY: -1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          style={{ perspective: 1000 }}
           className="md:col-span-4 lg:col-span-4 row-span-2 bg-black rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden group border border-white/10"
         >
           <div className="relative z-10 h-full flex flex-col justify-between">
@@ -180,7 +182,8 @@ export function Dashboard() {
 
         {/* Status Distribution */}
         <motion.div 
-          whileHover={{ y: -5 }}
+          whileHover={{ y: -8, scale: 1.01 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           className="md:col-span-2 lg:col-span-2 row-span-2 bg-white rounded-[3rem] p-10 neo-shadow border border-gray-100 flex flex-col items-center justify-center text-center relative overflow-hidden"
         >
            <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-8 absolute top-10">Task Orbit</h3>
@@ -219,8 +222,9 @@ export function Dashboard() {
 
         {/* Small Data Cards */}
         <motion.div 
-          whileHover={{ y: -5 }}
-          className="md:col-span-2 lg:col-span-2 row-span-1 bg-white rounded-[2.5rem] p-8 neo-shadow border border-gray-100 flex flex-col justify-between"
+          whileHover={{ y: -8, scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="md:col-span-2 lg:col-span-2 row-span-1 bg-white rounded-[2.5rem] p-8 neo-shadow border border-gray-100 flex flex-col justify-between cursor-pointer"
         >
            <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center text-red-500">
@@ -235,8 +239,9 @@ export function Dashboard() {
         </motion.div>
 
         <motion.div 
-          whileHover={{ y: -5 }}
-          className="md:col-span-2 lg:col-span-2 row-span-1 bg-[#EBFFD3] rounded-[2.5rem] p-8 neo-shadow border border-[#DAF5AF] flex flex-col justify-between"
+          whileHover={{ y: -8, scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="md:col-span-2 lg:col-span-2 row-span-1 bg-[#EBFFD3] rounded-[2.5rem] p-8 neo-shadow border border-[#DAF5AF] flex flex-col justify-between cursor-pointer"
         >
            <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-2xl bg-black flex items-center justify-center text-white">
@@ -311,7 +316,10 @@ export function Dashboard() {
                    <h3 className="text-2xl font-black font-display tracking-tight mb-4 leading-tight">Advanced Analytics & Team Intelligence</h3>
                    <p className="text-white/60 text-sm font-medium leading-relaxed mb-6">Unlock deeper insights into your team's velocity and project health with our enterprise modules.</p>
                 </div>
-                <button className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-black hover:text-white transition-all">
+                <button 
+                   onClick={() => alert("Strategic Intelligence Upgrade is currently in classified beta testing.")}
+                   className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-black hover:text-white active:scale-95 transition-all shadow-lg"
+                >
                    Upgrade Workspace
                 </button>
              </div>

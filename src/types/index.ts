@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'MEMBER';
+export type Role = 'OWNER' | 'ADMIN' | 'MEMBER';
 
 export interface UserProfile {
   uid: string;
@@ -13,6 +13,7 @@ export interface Project {
   name: string;
   description: string;
   ownerId: string;
+  teamLeaderId?: string | null;
   members: Record<string, Role>;
   createdAt: any; // Firestore Timestamp
 }

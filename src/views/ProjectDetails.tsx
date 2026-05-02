@@ -82,12 +82,19 @@ export function ProjectDetails() {
   const [activeView, setActiveView] = useState<'board' | 'analytics' | 'activity'>('board');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activities, setActivities] = useState<ProjectActivity[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editProject, setEditProject] = useState({ name: '', description: '' });
   const [newTask, setNewTask] = useState({ 
     title: '', 
     description: '', 
     priority: 'medium' as TaskPriority,
     assignedTo: ''
   });
+
+  const isAdmin = useMemo(() => {
+    if (!project || !user) return false;
+    return project.ownerId === user.uid || project.members[user.uid] === 'ADMIN';
+  }, [project, user]);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -206,12 +213,69 @@ export function ProjectDetails() {
   };
 
   const deleteTask = async (taskId: string) => {
+    if (!isAdmin) {
+      notify("Priority override required. Unauthorized action.", "error");
+      return;
+    }
     if (!confirm("Destroy this task permanently?")) return;
     try {
       await deleteDoc(doc(db, 'tasks', taskId));
       notify("Task purged", "success");
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `tasks/${taskId}`);
+    }
+  };
+
+  useEffect(() => {
+    if (project) {
+      setEditProject({ name: project.name, description: project.description });
+    }
+  }, [project]);
+
+  const updateTeamLeader = async (leaderId: string) => {
+    if (!isAdmin || !id) return;
+    try {
+      await updateDoc(doc(db, 'projects', id), {
+        teamLeaderId: leaderId || null
+      });
+      notify("Operational Lead synchronized", "success");
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${id}`);
+    }
+  };
+
+  const handleUpdateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAdmin || !id) return;
+    try {
+      await updateDoc(doc(db, 'projects', id), {
+        name: editProject.name,
+        description: editProject.description,
+        updatedAt: serverTimestamp()
+      });
+      setShowEditModal(false);
+      notify("Mission parameters updated", "success");
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${id}`);
+    }
+  };
+
+  const removeMember = async (mid: string) => {
+    if (!isAdmin) return;
+    if (mid === project?.ownerId) {
+      notify("Cannot remove mission architect", "error");
+      return;
+    }
+    if (!confirm("Remove this operative from mission?")) return;
+    try {
+      const { [mid]: _, ...remainingMembers } = project!.members;
+      await updateDoc(doc(db, 'projects', id!), {
+        members: remainingMembers,
+        updatedAt: serverTimestamp()
+      });
+      notify("Operative detached", "success");
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `projects/${id}`);
     }
   };
 
@@ -269,26 +333,71 @@ export function ProjectDetails() {
                <Briefcase className="w-8 h-8" />
             </div>
             <div>
-              <h2 className="text-4xl font-display font-black tracking-tighter leading-tight">
-                {project.name}
-              </h2>
-              <div className="flex items-center space-x-4 mt-1">
+              <div className="flex items-center space-x-3">
+                <h2 className="text-4xl font-display font-black tracking-tighter leading-tight">
+                  {project.name}
+                </h2>
+                {isAdmin && (
+                  <button 
+                    onClick={() => setShowEditModal(true)}
+                    className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-black transition-all"
+                  >
+                    <MoreHorizontal className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-4 mt-2">
                  <div className="flex -space-x-2">
                     {Object.keys(project.members).slice(0, 5).map(uid => (
-                      <img 
-                        key={uid}
-                        src={`https://ui-avatars.com/api/?name=${memberProfiles[uid] || 'User'}&background=random`} 
-                        className="h-8 w-8 rounded-full ring-4 ring-white shadow-sm" 
-                        title={memberProfiles[uid]}
-                      />
+                      <div key={uid} className="relative group/member">
+                        <img 
+                          src={`https://ui-avatars.com/api/?name=${memberProfiles[uid] || 'User'}&background=random`} 
+                          className="h-8 w-8 rounded-full ring-4 ring-white shadow-sm" 
+                          title={`${memberProfiles[uid]} (${project.members[uid]})`}
+                        />
+                        {isAdmin && uid !== user!.uid && (
+                          <button 
+                            onClick={() => removeMember(uid)}
+                            className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/member:opacity-100 transition-all shadow-lg"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+                      </div>
                     ))}
                  </div>
-                 <button 
-                  onClick={() => setShowInviteModal(true)}
-                  className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-black hover:text-white transition-all border border-gray-100"
-                 >
-                   <Plus className="w-4 h-4" />
-                 </button>
+                 {isAdmin && (
+                   <button 
+                    onClick={() => setShowInviteModal(true)}
+                    className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-black hover:text-white transition-all border border-gray-100"
+                   >
+                     <Plus className="w-4 h-4" />
+                   </button>
+                 )}
+                 <div className="h-6 w-px bg-gray-100" />
+                  <div className="flex items-center space-x-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Team Leader:</span>
+                    {isAdmin ? (
+                      <div className="relative group/leader">
+                        <select 
+                          value={project.teamLeaderId || ''} 
+                          onChange={(e) => updateTeamLeader(e.target.value)}
+                          className="appearance-none bg-gray-50 hover:bg-black hover:text-white transition-all rounded-xl px-4 py-1 pr-6 text-[10px] font-black uppercase tracking-widest focus:ring-4 focus:ring-black/5 border-none cursor-pointer"
+                        >
+                          <option value="">UNASSIGNED</option>
+                          {Object.keys(project.members).map(mid => (
+                            <option key={mid} value={mid}>{memberProfiles[mid] || mid}</option>
+                          ))}
+                        </select>
+                        <MoreHorizontal className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 group-hover/leader:text-white group-hover/leader:opacity-100 transition-all" />
+                      </div>
+                    ) : (
+                      <span className="text-[10px] font-black uppercase tracking-widest text-black">
+                        {project.teamLeaderId ? memberProfiles[project.teamLeaderId] : 'PENDING DEPLOYMENT'}
+                      </span>
+                    )}
+                 </div>
+                 <div className="h-6 w-px bg-gray-100" />
                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
                    {Object.keys(project.members).length} OPERATIVES ACTIVE
                  </span>
@@ -598,6 +707,58 @@ export function ProjectDetails() {
             project={project}
             onClose={() => setShowInviteModal(false)}
           />
+        )}
+
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-lg" 
+              onClick={() => setShowEditModal(false)} 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-xl p-12 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-8">
+                <button onClick={() => setShowEditModal(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-colors">
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+              <h3 className="text-4xl font-display font-black mb-10 tracking-tighter">Edit Project</h3>
+              <form onSubmit={handleUpdateProject} className="space-y-8">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4">Project Name</label>
+                  <input
+                    required
+                    type="text"
+                    className="w-full px-8 py-5 rounded-[2rem] bg-gray-50 border-none focus:bg-white focus:ring-4 focus:ring-black/5 transition-all text-lg font-bold"
+                    value={editProject.name}
+                    onChange={e => setEditProject({...editProject, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4">Description</label>
+                  <textarea
+                    rows={4}
+                    className="w-full px-8 py-5 rounded-[2rem] bg-gray-50 border-none focus:bg-white focus:ring-4 focus:ring-black/5 transition-all font-medium"
+                    value={editProject.description}
+                    onChange={e => setEditProject({...editProject, description: e.target.value})}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-6 rounded-[2rem] bg-black text-white font-black uppercase tracking-[0.3em] hover:shadow-xl transition-all"
+                >
+                  Update Parameters
+                </button>
+              </form>
+            </motion.div>
+          </div>
         )}
         
         {showTaskModal && (

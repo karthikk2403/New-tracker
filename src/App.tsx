@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './components/Notification';
 import { Layout } from './components/Layout';
+import { Landing } from './views/Landing';
 import { Login } from './views/Login';
 import { Dashboard } from './views/Dashboard';
 import { Projects } from './views/Projects';
@@ -25,7 +26,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/landing" replace />;
   return <>{children}</>;
 }
 
@@ -35,6 +36,7 @@ export default function App() {
       <NotificationProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
